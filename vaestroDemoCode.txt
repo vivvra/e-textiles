@@ -1,0 +1,97 @@
+// Vaestro MIDI glove demo code
+// Special thanks to RuudJoosten from Resolume Help
+
+// include MIDI library
+#include <MIDI.h>
+MIDI_CREATE_DEFAULT_INSTANCE();
+
+byte noteByte;  //Note to send to application
+byte velocityByte; //Speed of buttonpress (used in midi buttons capable of measuring force) In regular buttons this is the max MIDI value.
+
+// Seting pin number for variables & inputs
+int pushButton2 = 6;
+int tiltSwitch = 5;
+int flexPointer = 16;
+int flexMiddle = 17;
+
+/* The following was used for testing a range of values, using a potentiometer.
+  // Set state of button to unpressed
+  int buttonState2 = 0;
+
+  // This variable prevents a button from being pressed more than once per press (a button might send a signal multiple times when being pressed)
+  int note2 = 0;
+
+  // set analog values to 0
+  int analogValue_1 = 0; // pot 1
+  int analogValue_2 = 0; // pot 2
+
+  // Maximum MIDI value is 127. To notice change, even if first value is 127, the last value is set to 128
+  int lastanalogValue_1 = 128; // pot 1
+  int lastanalogValue_2 = 128; // pot 2
+  */
+
+void setup() { // main program
+  MIDI.begin(); // 115200 Hairless MIDI Serial Bridge baud rate
+  Serial.begin(115200);
+  pinMode(pushButton2, INPUT_PULLUP); // creates HIGH/LOW condition
+  pinMode(tiltSwitch, INPUT_PULLUP); // creates HIGH/LOW condition
+}
+
+void loop() {
+   delay(1); // This delay stops the virtual MIDI software from crashing
+  /*
+  // Analog potentiometer has values up to 1023. MIDI signals range from 0 to 127. To achieve this range 
+  // from our potentiometer numbers, we can divide by 8.
+  // Potentiometer could be too sensitive and give different (+-1) values.
+  // We can check if the last value is more than this minor fluctuation, if so send the signal.
+  if ((analogValue_1 - lastanalogValue_1) > 1 || (analogValue_1 - lastanalogValue_1) < -1) {
+    if (analogValue_1 != lastanalogValue_1) { // Has the value changed?
+      // Send serial value (ControlNumber 1, ControlValue = analogValue_1, Channel 1) // Format for MIDI
+      MIDI.sendControlChange(1, analogValue_1, 1);
+      lastanalogValue_1 = analogValue_1; //Set the current value as the last value
+    }
+  }
+  */
+  
+  // Read the pushbutton value into a variable
+  int sensorVal = digitalRead(6); // read pin 6
+  //print out the value of the pushbutton
+  Serial.println(sensorVal);
+
+  if (sensorVal == HIGH) { // condition for input
+    MIDI.sendControlChange(1, 0, 2); // Format for MIDI: (ControlNumber 1, ControlValue = 0, Channel 2)
+  } else {
+    MIDI.sendControlChange(1, 100, 2); // Set value to 100
+  }
+
+  delay(1); // Delay to keep everything working smoothly
+
+  int tiltVal = digitalRead(5); // read tiltSwitch value
+  if (tiltVal == HIGH) {
+    MIDI.sendControlChange(1, 0, 3);
+  } else {
+    MIDI.sendControlChange(1, 100, 3);
+  }
+
+  delay(1); // Delay to keep everything working smoothly
+
+  int flexPosition; // establishing flex sensor baseline
+  int midiTranslate; // translating for midi values
+  flexPosition = analogRead(flexPointer)/8;
+  //midiTranslate = map(flexPosition, 1000, 1023, 0, 127); // converting signals from flex into MIDI range
+  //Serial.println(flexPosition);
+  MIDI.sendControlChange(1, flexPosition*4, 4); // multiplying because sensitivity is low (unknown reason)
+
+  delay(1); // Delay to keep everything working smoothly
+
+  int flexPositionTwo; // establishing flex sensor baseline
+  int midiTranslateTwo; // translating for midi values
+  flexPositionTwo = analogRead(flexMiddle)/8;
+  //midiTranslateTwo = map(flexPositionTwo, 1000, 1023, 0, 127); // converting signals from flex into MIDI range
+  //Serial.println(flexPositionTwo);
+  MIDI.sendControlChange(1, flexPositionTwo*4, 5); // multiplying because sensitivity is low (unknown reason)
+
+  // 3rd flex sensor disabled for demo
+  // LED disabled for demo - it was an always on LED, green, to indicate power = on
+
+}
